@@ -1,0 +1,123 @@
+<!-- certificates.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Certificates</title>
+    <link href="Certificates Stylesheet.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <section class="wrap" aria-labelledby="certs-section-title">
+        <div class="section-head">
+            <div>
+                <h2 id="certs-section-title">Certificates</h2>
+                <p>Selected certifications with public credential links and verifiable IDs</p>
+            </div>
+            <!-- <a class="btn outline" href="#all-certs">View all</a> -->
+        </div>
+
+        <div class="grid" id="certsGrid">
+            <!-- Certificate 1 -->
+            <article class="card">
+                <div class="thumb">
+                    <img src="Introduction to Prompt Engineering with GitHub Copilot.jpg"
+                        alt="Introduction to Prompt Engineering with GitHub Copilot image" loading="lazy" />
+                    <!-- <span class="badge">Professional</span> -->
+                </div>
+                <div class="body">
+                    <h3 class="title">Introduction to Prompt Engineering with GitHub Copilot</h3>
+                    <div class="issuer">
+                        <img class="issuer-logo" src="Images/Simplilearn Logo.jpg" alt="Simplilearn logo" loading="lazy" />
+                        <span>Issued by Simplilearn</span>
+                    </div>
+                    <div class="meta">
+                        <span>Issued: Jun 2025</span>
+                        <span>Credential ID: 9001339</span>
+                    </div>
+                    <div class="tags">
+                        <!-- <span class="tag">Data</span>
+                        <span class="tag">SQL</span>
+                        <span class="tag">Dashboards</span> -->
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-view"
+                            href="Introduction to Prompt Engineering with GitHub Copilot.jpg">View</a>
+                        <!-- <button class="btn btn-verify"
+                            data-verify="https://example.com/verify/google-data-analytics">Verify</button> -->
+                    </div>
+                </div>
+            </article>
+
+            <!-- Certificate 2 -->
+            <article class="card">
+                <div class="thumb">
+                    <img src="Generative AI.jpg"
+                        alt="Generative AI" loading="lazy" />
+                    <!-- <span class="badge">Associate</span> -->
+                </div>
+                <div class="body">
+                    <h3 class="title">Generative AI</h3>
+                    <div class="issuer">
+                        <img class="issuer-logo" src="Simplilearn Logo.jpg" alt="Simplilearn logo" loading="lazy" />
+                        <span>Issued by Simplilearn</span>
+                    </div>
+                    <div class="meta">
+                        <span>Issued: Sep 2025</span>
+                        <span>Credential ID: 9016228</span>
+                    </div>
+                    <div class="tags">
+                        <!-- <span class="tag">Cloud</span>
+                        <span class="tag">Architecture</span>
+                        <span class="tag">Security</span> -->
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-view" href="Generative AI.jpg">View</a>
+                        <!-- <button class="btn btn-verify" data-verify="https://example.com/verify/aws-saa">Verify</button> -->
+                    </div>
+                </div>
+            </article>
+
+            <!-- Certificate 3 -->
+            <article class="card">
+                <div class="thumb">
+                    <img src="Gemini for Google Workspace.jpg" alt="Gemini for Google Workspace certificate image" loading="lazy" />
+                    <!-- <span class="badge">Specialization</span> -->
+                </div>
+                <div class="body">
+                    <h3 class="title">Gemini for Google Workspace</h3>
+                    <div class="issuer">
+                        <img class="issuer-logo" src="Simplilearn Logo.jpg" alt="Simplilearn logo" loading="lazy" />
+                        <span>Issued by Simplilearn</span>
+                    </div>
+                    <div class="meta">
+                        <span>Issued: Sep 2025</span>
+                        <span>Credential ID: 9028410</span>
+                    </div>
+                    <div class="tags">
+                        <!-- <span class="tag">UX</span>
+                        <span class="tag">Research</span>
+                        <span class="tag">Prototyping</span> -->
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-view" href="Gemini for Google Workspace.jpg">View</a>
+                        <!-- <button class="btn btn-verify"
+                            data-verify="https://example.com/verify/ux-foundations">Verify</button> -->
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section id="all-certs" class="wrap" aria-labelledby="all-certs-title" hidden>
+        <h2 id="all-certs-title" class="sr-only">All Certificates</h2>
+    </section>
+
+    <script src="Certificates Script.js"></script>
+</body>
+
+</html>

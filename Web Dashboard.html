@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Sales Performance Dashboard (Embedded JSON)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Latest Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --card: #0b1220;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #22c55e;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --grid: #1f2937;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+        }
+
+        header {
+            padding: 16px 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+            border-bottom: 1px solid var(--grid);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .container {
+            padding: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            background: var(--panel);
+            border: 1px solid var(--grid);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--grid);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .kpi {
+            grid-column: span 4;
+            background: var(--panel);
+            border: 1px solid var(--grid);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .label {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .delta {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .green {
+            color: var(--accent);
+        }
+
+        .amber {
+            color: var(--warn);
+        }
+
+        .red {
+            color: var(--danger);
+        }
+
+        .help {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #0b1020;
+            color: var(--text);
+            border: 1px solid var(--grid);
+            border-radius: 8px;
+        }
+
+        .plot {
+            width: 100%;
+            height: 360px;
+        }
+
+        @media (max-width: 1000px) {
+            .kpi {
+                grid-column: span 12;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Sales Performance Dashboard</h1>
+        <div class="sub">Using embedded JSON with fields: OrderID, Product, State, UnitsSold, UnitPrice, TotalSales,
+            SaleDate (YYYY-MM-DD)</div>
+    </header>
+
+    <div class="container">
+        <!-- Controls (same as before, minus upload) -->
+        <div class="controls">
+            <div class="row">
+                <div class="card" style="grid-column: span 3;">
+                    <div class="label">Time Grain</div>
+                    <select id="timeGrain">
+                        <option value="month">Month</option>
+                        <option value="quarter">Quarter</option>
+                        <option value="year">Year</option>
+                    </select>
+                </div>
+                <div class="card" style="grid-column: span 4;">
+                    <div class="label">Filter Product</div>
+                    <select id="productFilter" multiple size="4"></select>
+                </div>
+                <div class="card" style="grid-column: span 5;">
+                    <div class="label">Filter State</div>
+                    <select id="stateFilter" multiple size="4"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpis">
+            <div class="kpi">
+                <div class="label">Total Sales</div>
+                <div id="kpiSales" class="value">—</div>
+                <div id="kpiSalesDelta" class="delta"></div>
+            </div>
+            <div class="kpi">
+                <div class="label">Units Sold</div>
+                <div id="kpiUnits" class="value">—</div>
+                <div id="kpiUnitsDelta" class="delta"></div>
+            </div>
+            <div class="kpi">
+                <div class="label">Average Order Value</div>
+                <div id="kpiAOV" class="value">—</div>
+                <div id="kpiAOVDelta" class="delta"></div>
+            </div>
+        </div>
+
+        <!-- Charts grid -->
+        <div class="row" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 6;">
+                <div class="label">Total Sales Trend</div>
+                <div id="salesTrend" class="plot"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+                <div class="label">Units Sold Trend</div>
+                <div id="unitsTrend" class="plot"></div>
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+                <div class="label">AOV by Product</div>
+                <div id="aovByProduct" class="plot"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+                <div class="label">Product Mix Pareto</div>
+                <div id="paretoProduct" class="plot"></div>
+            </div>
+
+            <div class="card" style="grid-column: span 12;">
+                <div class="label">Geographic Performance (State)</div>
+                <div id="geoState" class="plot" style="height:420px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 0) Paste/replace the JSON array here if needed (sample from Electrical-sales-data-JSON.json)
+        const EMBEDDED_JSON = [
+            { "OrderID": "ORD001", "Product": "Toaster", "State": "New York", "UnitsSold": 93, "UnitPrice": 407.7, "TotalSales": 37916.1, "SaleDate": "2023-08-21" },
+            { "OrderID": "ORD002", "Product": "Toaster", "State": "Michigan", "UnitsSold": 83, "UnitPrice": 244.95, "TotalSales": 20330.85, "SaleDate": "2023-11-24" },
+            { "OrderID": "ORD003", "Product": "Microwave Oven", "State": "New York", "UnitsSold": 24, "UnitPrice": 1319.23, "TotalSales": 31661.52, "SaleDate": "2023-05-02" },
+            { "OrderID": "ORD004", "Product": "Induction Cooktop", "State": "Illinois", "UnitsSold": 2, "UnitPrice": 404.56, "TotalSales": 809.12, "SaleDate": "2023-05-01" },
+            { "OrderID": "ORD005", "Product": "LED Bulb (Pack of 10)", "State": "Michigan", "UnitsSold": 22, "UnitPrice": 63.78, "TotalSales": 1403.16, "SaleDate": "2023-09-17" },
+            { "OrderID": "ORD006", "Product": "Ceiling Fan", "State": "Michigan", "UnitsSold": 92, "UnitPrice": 1948.82, "TotalSales": 179291.44, "SaleDate": "2023-03-12" },
+            { "OrderID": "ORD007", "Product": "Toaster", "State": "New York", "UnitsSold": 64, "UnitPrice": 960.19, "TotalSales": 61452.16, "SaleDate": "2023-05-19" },
+            { "OrderID": "ORD008", "Product": "Toaster", "State": "Pennsylvania", "UnitsSold": 73, "UnitPrice": 176.85, "TotalSales": 12910.05, "SaleDate": "2023-04-25" },
+            { "OrderID": "ORD009", "Product": "LED Bulb (Pack of 10)", "State": "Texas", "UnitsSold": 9, "UnitPrice": 81.13, "TotalSales": 730.17, "SaleDate": "2023-02-20" },
+            { "OrderID": "ORD010", "Product": "LED Bulb (Pack of 10)", "State": "Ohio", "UnitsSold": 44, "UnitPrice": 1015.59, "TotalSales": 44685.96, "SaleDate": "2023-03-14" },
+            { "OrderID": "ORD011", "Product": "Refrigerator", "State": "New York", "UnitsSold": 50, "UnitPrice": 1341.92, "TotalSales": 67096, "SaleDate": "2023-02-06" },
+            { "OrderID": "ORD012", "Product": "Electric Kettle", "State": "Michigan", "UnitsSold": 4, "UnitPrice": 410.47, "TotalSales": 1641.88, "SaleDate": "2023-02-26" },
+            { "OrderID": "ORD013", "Product": "LED Bulb (Pack of 10)", "State": "Texas", "UnitsSold": 74, "UnitPrice": 1794.91, "TotalSales": 132823.34, "SaleDate": "2023-08-14" },
+            { "OrderID": "ORD014", "Product": "Toaster", "State": "North Carolina", "UnitsSold": 62, "UnitPrice": 684.39, "TotalSales": 42432.18, "SaleDate": "2023-02-15" },
+            { "OrderID": "ORD015", "Product": "Microwave Oven", "State": "Georgia", "UnitsSold": 26, "UnitPrice": 1932.25, "TotalSales": 50238.5, "SaleDate": "2023-12-13" },
+            { "OrderID": "ORD016", "Product": "Water Purifier", "State": "California", "UnitsSold": 89, "UnitPrice": 1974.43, "TotalSales": 175724.27, "SaleDate": "2023-08-01" },
+            { "OrderID": "ORD017", "Product": "LED Bulb (Pack of 10)", "State": "Georgia", "UnitsSold": 88, "UnitPrice": 77.46, "TotalSales": 6816.48, "SaleDate": "2023-03-17" },
+            { "OrderID": "ORD018", "Product": "Induction Cooktop", "State": "Florida", "UnitsSold": 35, "UnitPrice": 1553.98, "TotalSales": 54389.3, "SaleDate": "2023-05-10" },
+            { "OrderID": "ORD019", "Product": "Toaster", "State": "Michigan", "UnitsSold": 41, "UnitPrice": 1834.17, "TotalSales": 75200.97, "SaleDate": "2023-09-08" },
+            { "OrderID": "ORD020", "Product": "LED Bulb (Pack of 10)", "State": "Texas", "UnitsSold": 33, "UnitPrice": 173.94, "TotalSales": 5740.02, "SaleDate": "2023-07-24" },
+            { "OrderID": "ORD021", "Product": "Microwave Oven", "State": "Florida", "UnitsSold": 44, "UnitPrice": 1293.24, "TotalSales": 56902.56, "SaleDate": "2023-11-03" },
+            { "OrderID": "ORD022", "Product": "Refrigerator", "State": "Florida", "UnitsSold": 47, "UnitPrice": 1440.83, "TotalSales": 67719.01, "SaleDate": "2023-01-05" },
+            { "OrderID": "ORD023", "Product": "Immersion Heater", "State": "Ohio", "UnitsSold": 14, "UnitPrice": 1012.9, "TotalSales": 14180.6, "SaleDate": "2023-09-15" },
+            { "OrderID": "ORD024", "Product": "Vacuum Cleaner", "State": "Michigan", "UnitsSold": 42, "UnitPrice": 906.71, "TotalSales": 38081.82, "SaleDate": "2023-03-07" },
+            { "OrderID": "ORD025", "Product": "Refrigerator", "State": "New York", "UnitsSold": 96, "UnitPrice": 1406.26, "TotalSales": 135000.96, "SaleDate": "2023-05-23" },
+            { "OrderID": "ORD026", "Product": "Toaster", "State": "New York", "UnitsSold": 13, "UnitPrice": 200.11, "TotalSales": 2601.43, "SaleDate": "2023-11-19" },
+            { "OrderID": "ORD027", "Product": "Electric Kettle", "State": "Texas", "UnitsSold": 42, "UnitPrice": 1625.83, "TotalSales": 68284.86, "SaleDate": "2023-09-21" },
+            { "OrderID": "ORD028", "Product": "Electric Kettle", "State": "New York", "UnitsSold": 30, "UnitPrice": 1772.4, "TotalSales": 53172, "SaleDate": "2023-10-23" },
+            { "OrderID": "ORD099", "Product": "Air Conditioner", "State": "North Carolina", "UnitsSold": 52, "UnitPrice": 1361.41, "TotalSales": 70793.32, "SaleDate": "2023-04-21" },
+            { "OrderID": "ORD100", "Product": "Toaster", "State": "North Carolina", "UnitsSold": 39, "UnitPrice": 227.85, "TotalSales": 8886.15, "SaleDate": "2023-10-26" }
+        ];
+
+        // Utilities
+        const fmtCurrency = n => n === null || n === undefined ? '—' :
+            n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        const fmtInt = n => n === null || n === undefined ? '—' : Math.round(n).toLocaleString();
+        const fmtOne = n => n === null || n === undefined ? '—' :
+            n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+        function parseDate(s) {
+            const d = new Date(s);
+            return isNaN(d) ? null : d;
+        }
+        function toKey(date, grain) {
+            const y = date.getUTCFullYear();
+            const m = date.getUTCMonth() + 1;
+            if (grain === 'year') return `${y}`;
+            if (grain === 'quarter') {
+                const q = Math.floor((m - 1) / 3) + 1;
+                return `${y}-Q${q}`;
+            }
+            return `${y}-${String(m).padStart(2, '0')}`;
+        }
+        function keySort(a, b) {
+            const pa = a.split(/[-Q]/).map(x => parseInt(x, 10));
+            const pb = b.split(/[-Q]/).map(x => parseInt(x, 10));
+            const na = [pa[0] || 0, a.includes('Q') ? (pa[1] || 0) : (parseInt((a.split('-')[1] || '0'), 10) || 0), 0];
+            const nb = [pb[0] || 0, b.includes('Q') ? (pb[1] || 0) : (parseInt((b.split('-')[1] || '0'), 10) || 0), 0];
+            return na[0] - nb[0] || na[1] - nb[1] || na[2] - nb[2];
+        }
+        function validateRecord(row) {
+            const required = ['OrderID', 'Product', 'State', 'UnitsSold', 'UnitPrice', 'TotalSales', 'SaleDate'];
+            for (const f of required) { if (!(f in row)) return `Missing field: ${f}`; }
+            if (!parseDate(row.SaleDate)) return 'Invalid SaleDate';
+            if (isNaN(Number(row.UnitsSold))) return 'UnitsSold not numeric';
+            if (isNaN(Number(row.UnitPrice))) return 'UnitPrice not numeric';
+            if (isNaN(Number(row.TotalSales))) return 'TotalSales not numeric';
+            return null;
+        }
+        function groupBy(arr, keyFn) {
+            const map = new Map();
+            for (const x of arr) {
+                const k = keyFn(x);
+                if (!map.has(k)) map.set(k, []);
+                map.get(k).push(x);
+            }
+            return map;
+        }
+        function aggregateSum(arr, field) { return arr.reduce((s, r) => s + Number(r[field] || 0), 0); }
+        function unique(arr) { return Array.from(new Set(arr)); }
+        function percentDelta(curr, prev) { if (prev === 0 || prev == null) return null; return (curr - prev) / prev * 100; }
+        function setDelta(el, value) {
+            if (value === null) { el.textContent = ''; return; }
+            const cls = value >= 0 ? 'green' : 'red';
+            const sign = value >= 0 ? '+' : '';
+            el.className = `delta ${cls}`;
+            el.textContent = `${sign}${value.toFixed(1)}% vs prior`;
+        }
+
+        // State
+        let raw = [];
+        let filtered = [];
+        let grain = 'month';
+        let selProducts = new Set();
+        let selStates = new Set();
+
+        // Elements
+        const timeGrain = document.getElementById('timeGrain');
+        const productFilter = document.getElementById('productFilter');
+        const stateFilter = document.getElementById('stateFilter');
+
+        function populateFilters(data) {
+            const products = unique(data.map(d => d.Product)).sort();
+            const states = unique(data.map(d => d.State)).sort();
+            productFilter.innerHTML = '';
+            stateFilter.innerHTML = '';
+            for (const p of products) {
+                const opt = document.createElement('option');
+                opt.value = p; opt.textContent = p;
+                productFilter.appendChild(opt);
+            }
+            for (const s of states) {
+                const opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                stateFilter.appendChild(opt);
+            }
+        }
+
+        // Filters
+        timeGrain.addEventListener('change', () => { grain = timeGrain.value; applyAndRender(); });
+        productFilter.addEventListener('change', () => {
+            selProducts = new Set(Array.from(productFilter.selectedOptions).map(o => o.value));
+            applyAndRender();
+        });
+        stateFilter.addEventListener('change', () => {
+            selStates = new Set(Array.from(stateFilter.selectedOptions).map(o => o.value));
+            applyAndRender();
+        });
+
+        function applyFilters(data) {
+            return data.filter(d => {
+                const okP = selProducts.size === 0 || selProducts.has(d.Product);
+                const okS = selStates.size === 0 || selStates.has(d.State);
+                return okP && okS;
+            });
+        }
+        function computePeriods(data) {
+            if (data.length === 0) return { current: [], prev: [] };
+            const keys = data.map(d => toKey(d.SaleDate, grain)).sort(keySort);
+            const uniq = Array.from(new Set(keys));
+            const lastKey = uniq[uniq.length - 1];
+            const prevKey = uniq.length > 1 ? uniq[uniq.length - 2] : null;
+            const current = data.filter(d => toKey(d.SaleDate, grain) === lastKey);
+            const prev = prevKey ? data.filter(d => toKey(d.SaleDate, grain) === prevKey) : [];
+            return { lastKey, prevKey, current, prev };
+        }
+
+        function applyAndRender() {
+            filtered = applyFilters(raw);
+            renderAll(filtered);
+        }
+
+        function renderAll(data) {
+            // KPIs
+            const { current, prev } = computePeriods(data);
+            const totalSales = aggregateSum(data, 'TotalSales');
+            const totalUnits = aggregateSum(data, 'UnitsSold');
+            const orders = data.length;
+            const aov = orders ? totalSales / orders : 0;
+
+            const currSales = aggregateSum(current, 'TotalSales');
+            const prevSales = aggregateSum(prev, 'TotalSales');
+            const currUnits = aggregateSum(current, 'UnitsSold');
+            const prevUnits = aggregateSum(prev, 'UnitsSold');
+            const currAOV = current.length ? aggregateSum(current, 'TotalSales') / current.length : 0;
+            const prevAOV = prev.length ? aggregateSum(prev, 'TotalSales') / prev.length : 0;
+
+            document.getElementById('kpiSales').textContent = fmtCurrency(totalSales);
+            setDelta(document.getElementById('kpiSalesDelta'), percentDelta(currSales, prevSales));
+            document.getElementById('kpiUnits').textContent = fmtInt(totalUnits);
+            setDelta(document.getElementById('kpiUnitsDelta'), percentDelta(currUnits, prevUnits));
+            document.getElementById('kpiAOV').textContent = fmtCurrency(aov);
+            setDelta(document.getElementById('kpiAOVDelta'), percentDelta(currAOV, prevAOV));
+
+            // Trends
+            const byPeriod = Array.from(groupBy(data, d => toKey(d.SaleDate, grain)).entries())
+                .map(([k, rows]) => ({ key: k, sales: aggregateSum(rows, 'TotalSales'), units: aggregateSum(rows, 'UnitsSold') }))
+                .sort((a, b) => keySort(a.key, b.key));
+
+            Plotly.react('salesTrend', [{
+                x: byPeriod.map(d => d.key),
+                y: byPeriod.map(d => d.sales),
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#22c55e', width: 3 },
+                hovertemplate: '%{x}<br>Sales: %{y:$,.0f}<extra></extra>'
+            }], {
+                margin: { t: 10, r: 10, l: 50, b: 40 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { gridcolor: '#1f2937' },
+                yaxis: { gridcolor: '#1f2937', tickprefix: '$' }
+            }, { displaylogo: false, responsive: true });
+
+            Plotly.react('unitsTrend', [{
+                x: byPeriod.map(d => d.key),
+                y: byPeriod.map(d => d.units),
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#60a5fa', width: 3 },
+                hovertemplate: '%{x}<br>Units: %{y:,}<extra></extra>'
+            }], {
+                margin: { t: 10, r: 10, l: 50, b: 40 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { gridcolor: '#1f2937' },
+                yaxis: { gridcolor: '#1f2937' }
+            }, { displaylogo: false, responsive: true });
+
+            // AOV by Product
+            const byProduct = Array.from(groupBy(data, d => d.Product).entries())
+                .map(([p, rows]) => ({
+                    product: p, orders: rows.length, sales: aggregateSum(rows, 'TotalSales'),
+                    aov: rows.length ? aggregateSum(rows, 'TotalSales') / rows.length : 0
+                }))
+                .sort((a, b) => b.aov - a.aov);
+
+            Plotly.react('aovByProduct', [{
+                x: byProduct.map(d => d.product),
+                y: byProduct.map(d => d.aov),
+                type: 'bar',
+                marker: { color: '#a78bfa' },
+                hovertemplate: '%{x}<br>AOV: %{y:$,.0f}<extra></extra>'
+            }], {
+                margin: { t: 10, r: 10, l: 50, b: 90 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { gridcolor: '#1f2937' },
+                yaxis: { gridcolor: '#1f2937', tickprefix: '$' }
+            }, { displaylogo: false, responsive: true });
+
+            // Product Mix Pareto
+            const salesByProd = Array.from(groupBy(data, d => d.Product).entries())
+                .map(([p, rows]) => ({ product: p, sales: aggregateSum(rows, 'TotalSales') }))
+                .sort((a, b) => b.sales - a.sales);
+
+            const total = salesByProd.reduce((s, r) => s + r.sales, 0);
+            let cum = 0;
+            const cumPct = salesByProd.map(r => { cum += r.sales; return (cum / (total || 1)) * 100; });
+
+            Plotly.react('paretoProduct', [
+                {
+                    x: salesByProd.map(d => d.product),
+                    y: salesByProd.map(d => d.sales),
+                    type: 'bar',
+                    marker: { color: '#34d399' },
+                    yaxis: 'y1',
+                    name: 'Sales',
+                    hovertemplate: '%{x}<br>Sales: %{y:$,.0f}<extra></extra>'
+                },
+                {
+                    x: salesByProd.map(d => d.product),
+                    y: cumPct,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: { color: '#f59e0b', width: 2, shape: 'hv' },
+                    yaxis: 'y2',
+                    name: 'Cumulative %',
+                    hovertemplate: '%{x}<br>Cum: %{y:.1f}%<extra></extra>'
+                }
+            ], {
+                margin: { t: 10, r: 40, l: 50, b: 90 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { gridcolor: '#1f2937' },
+                yaxis: { title: 'Sales', gridcolor: '#1f2937', tickprefix: '$' },
+                yaxis2: { overlaying: 'y', side: 'right', range: [0, 100], ticksuffix: '%', showgrid: false },
+                legend: { orientation: 'h' }
+            }, { displaylogo: false, responsive: true });
+
+            // Geographic performance (State) ranked bar + units overlay
+            const byState = Array.from(groupBy(data, d => d.State).entries())
+                .map(([s, rows]) => ({ state: s, sales: aggregateSum(rows, 'TotalSales'), units: aggregateSum(rows, 'UnitsSold') }))
+                .sort((a, b) => b.sales - a.sales);
+
+            Plotly.react('geoState', [
+                {
+                    x: byState.map(d => d.state),
+                    y: byState.map(d => d.sales),
+                    type: 'bar',
+                    marker: { color: '#38bdf8' },
+                    name: 'Sales',
+                    hovertemplate: '%{x}<br>Sales: %{y:$,.0f}<extra></extra>'
+                },
+                {
+                    x: byState.map(d => d.state),
+                    y: byState.map(d => d.units),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    yaxis: 'y2',
+                    line: { color: '#ef4444' },
+                    name: 'Units',
+                    hovertemplate: '%{x}<br>Units: %{y:,}<extra></extra>'
+                }
+            ], {
+                barmode: 'group',
+                margin: { t: 10, r: 40, l: 50, b: 90 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { gridcolor: '#1f2937' },
+                yaxis: { title: 'Sales', gridcolor: '#1f2937', tickprefix: '$' },
+                yaxis2: { overlaying: 'y', side: 'right', title: 'Units', showgrid: false },
+                legend: { orientation: 'h' }
+            }, { displaylogo: false, responsive: true });
+        }
+
+        // Bootstrap: validate and load embedded JSON, then render
+        (function init() {
+            const errs = [];
+            raw = EMBEDDED_JSON.map((r, i) => {
+                const err = validateRecord(r);
+                if (err) errs.push(`Row ${i + 1}: ${err}`);
+                return {
+                    OrderID: String(r.OrderID),
+                    Product: String(r.Product),
+                    State: String(r.State),
+                    UnitsSold: Number(r.UnitsSold),
+                    UnitPrice: Number(r.UnitPrice),
+                    TotalSales: Number(r.TotalSales),
+                    SaleDate: parseDate(r.SaleDate)
+                };
+            }).filter(r => r.SaleDate);
+            if (errs.length) { console.warn('Validation issues:', errs.slice(0, 20)); }
+            populateFilters(raw);
+            selProducts = new Set();
+            selStates = new Set();
+            applyAndRender();
+        })();
+    </script>
+</body>
+
+</html>
